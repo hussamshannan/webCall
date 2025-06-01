@@ -5,7 +5,18 @@ const cors = require("cors");
 const { v4: uuidv4 } = require("uuid");
 
 const app = express();
-app.use(cors());
+app.use(cors());// ...existing code...
+
+io.on("connection", (socket) => {
+  // ...existing code...
+
+  socket.on("audio-chunk", ({ roomId, chunk }) => {
+    console.log(`Received audio chunk from ${socket.id} in room ${roomId}`);
+    // You can set a flag or emit an event here for indication
+  });
+
+  // ...existing code...
+});
 
 const server = http.createServer(app);
 const io = new Server(server, {
