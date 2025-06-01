@@ -9,7 +9,7 @@ app.use(cors());
 
 const server = http.createServer(app);
 const io = new Server(server, {
-  cors: { origin: "*" },
+  cors: { origin: "https://683ca844f028c8379abf1464--gocall.netlify.app" },
 });
 
 const PORT = 5500;
