@@ -1,58 +1,45 @@
+// server.js
 const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
 const cors = require("cors");
-const { v4: uuidv4 } = require("uuid");
 
 const app = express();
-app.use(cors()); // ...existing code...
 const server = http.createServer(app);
 
 const io = new Server(server, {
-  cors: { origin: "https://683ca844f028c8379abf1464--gocall.netlify.app" },
-});
-io.on("connection", (socket) => {
-  // ...existing code...
-
-  socket.on("audio-chunk", ({ roomId, chunk }) => {
-    console.log(`Received audio chunk from ${socket.id} in room ${roomId}`);
-    // You can set a flag or emit an event here for indication
-  });
-
-  // ...existing code...
+  cors: {
+    origin: "*", // Allow all origins for dev, restrict in production
+    methods: ["GET", "POST"],
+  },
 });
 
-
-const PORT = 5500;
-
 io.on("connection", (socket) => {
-  console.log(`User connected: ${socket.id}`);
+  console.log("User connected:", socket.id);
 
-  socket.on("join-call", (roomId) => {
+  socket.on("join-room", (roomId) => {
     socket.join(roomId);
+    console.log(`User ${socket.id} joined room ${roomId}`);
     socket.to(roomId).emit("user-joined", socket.id);
-
-    // ✅ Emit back to the user who just joined
-    socket.emit("joined-successfully", { roomId, socketId: socket.id });
   });
 
-  socket.on("signal", ({ roomId, data }) => {
-    socket.to(roomId).emit("signal", { from: socket.id, data });
+  socket.on("offer", ({ offer, to }) => {
+    io.to(to).emit("offer", { offer, from: socket.id });
   });
 
-  socket.on("end-call", (roomId) => {
-    socket.to(roomId).emit("call-ended");
-    io.in(roomId).socketsLeave(roomId);
+  socket.on("answer", ({ answer, to }) => {
+    io.to(to).emit("answer", { answer, from: socket.id });
+  });
+
+  socket.on("ice-candidate", ({ candidate, to }) => {
+    io.to(to).emit("ice-candidate", { candidate, from: socket.id });
   });
 
   socket.on("disconnect", () => {
-    console.log(`User disconnected: ${socket.id}`);
+    console.log("User disconnected:", socket.id);
+    socket.broadcast.emit("user-disconnected", socket.id);
   });
 });
 
-app.get("/create-room", (req, res) => {
-  const roomId = uuidv4();
-  res.json({ roomId });
-});
-
+const PORT = process.env.PORT || 5500;
 server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
