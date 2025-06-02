@@ -1,7 +1,9 @@
 const socket = io("/");
 const videoGrid = document.getElementById("video-grid");
 
-const myPeer = new Peer(); // Uses PeerJS default cloud server
+const myPeer = new Peer(undefined, {
+  secure: true,
+}); // Uses PeerJS default cloud server
 const myVideo = document.createElement("video");
 myVideo.muted = true;
 myVideo.playsInline = true;
@@ -25,7 +27,6 @@ navigator.mediaDevices
     myPeer.on("call", (call) => {
       call.answer(stream);
       const video = document.createElement("video");
-      video.muted = true; // Ensures autoplay on iPhone
       video.playsInline = true;
       call.on("stream", (userVideoStream) => {
         console.log("Received stream from peer");
@@ -50,7 +51,6 @@ socket.on("user-disconnected", (userId) => {
 function connectToNewUser(userId, stream) {
   const call = myPeer.call(userId, stream);
   const video = document.createElement("video");
-  video.muted = true; // Ensures autoplay on iPhone
   video.playsInline = true;
 
   call.on("stream", (userVideoStream) => {
