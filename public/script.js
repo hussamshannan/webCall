@@ -2,6 +2,9 @@ const socket = io("/");
 
 const videoGrid = document.getElementById("video-grid");
 const myPeer = new Peer(undefined, {
+  host: "https://webcall-7f8y.onrender.com",
+  port: 443,
+  path: "/",
   secure: true,
 }); // uses default PeerJS server
 
