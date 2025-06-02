@@ -5,6 +5,7 @@ const myPeer = new Peer(); // uses PeerJS default cloud server
 
 const myVideo = document.createElement("video");
 myVideo.muted = true;
+myVideo.playsInline = true;
 
 const peers = {};
 navigator.mediaDevices
@@ -60,8 +61,6 @@ function connectToNewUser(userId, stream) {
 function addVideoStream(video, stream) {
   video.srcObject = stream;
   video.playsInline = true;
-  video.autoplay = true;
-  video.muted = true;
   video.addEventListener("loadedmetadata", () => {
     video.play().catch((err) => {
       console.error("Video play failed:", err);
@@ -69,3 +68,4 @@ function addVideoStream(video, stream) {
   });
   videoGrid.append(video);
 }
+  
