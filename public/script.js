@@ -1,5 +1,4 @@
-// const socket = io("https://webcall-7f8y.onrender.com");
-const socket = io("/");
+const socket = io("https://webcall-7f8y.onrender.com");
 
 const videoGrid = document.getElementById("video-grid");
 const myPeer = new Peer(undefined); // default PeerJS server
