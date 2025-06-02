@@ -2,26 +2,32 @@ const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
 const { v4: uuidV4 } = require("uuid");
+const path = require("path");
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: "*", // in production, replace * with your frontend domain
+    origin: "*", // replace with frontend URL in production
     methods: ["GET", "POST"],
   },
 });
 
-app.set("view engine", "ejs");
-app.use(express.static("public"));
+app.use(express.static(path.join(__dirname, "public"))); // serve React build or static files
 
 app.get("/", (req, res) => {
-  res.redirect(`/?room=${uuidV4()}`);
+  if (!req.query.room) {
+    // If no room query param, redirect with a generated one
+    return res.redirect(`/?room=${uuidV4()}`);
+  }
+  // Serve index.html (React app entrypoint)
+  res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-app.get("/:room", (req, res) => {
-  res.render("room", { roomId: req.params.room });
-});
+// Optional: remove or keep based on your app design
+// app.get("/:room", (req, res) => {
+//   res.render("room", { roomId: req.params.room });
+// });
 
 io.on("connection", (socket) => {
   socket.on("join-room", (roomId, userId) => {
