@@ -9,6 +9,8 @@ app.use(express.static("public"));
 
 app.get("/", (req, res) => {
   res.redirect(`/${uuidV4()}`);
+//   res.redirect(`https://gocall.netlify.app/${uuidV4()}`);
+//   res.redirect(`http://localhost:5173//${uuidV4()}`);
 });
 
 app.get("/:room", (req, res) => {
