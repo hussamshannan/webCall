@@ -28,7 +28,7 @@ navigator.mediaDevices
       socket.emit("join-room", ROOM_ID, id);
     });
 
-    myPeer.on("call", (call) => {
+    peer.on("call", (call) => {
       call.answer(stream);
       const video = document.createElement("video");
       video.playsInline = true;
