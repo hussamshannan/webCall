@@ -49,10 +49,21 @@ function connectToNewUser(userId, stream) {
   peers[userId] = call;
 }
 
+// function addVideoStream(video, stream) {
+//   video.srcObject = stream;
+//   video.addEventListener("loadedmetadata", () => {
+//     video.play();
+//   });
+//   videoGrid.append(video);
+// }
 function addVideoStream(video, stream) {
   video.srcObject = stream;
+  video.playsInline = true;
   video.addEventListener("loadedmetadata", () => {
-    video.play();
+    video.play().catch((err) => {
+      console.error("Video play failed:", err);
+    });
   });
   videoGrid.append(video);
 }
+  
