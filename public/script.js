@@ -1,58 +1,39 @@
 const socket = io("https://webcall-7f8y.onrender.com");
 
 const videoGrid = document.getElementById("video-grid");
-const myPeer = new Peer(); // use default PeerJS cloud server
+const myPeer = new Peer(undefined); // default PeerJS server
+const myVideo = createVideoElement(true);
 const peers = {};
-const myVideo = createVideoElement(true); // local stream muted
 
+// Start
 (async () => {
   try {
     const stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: "user" }, // improve compatibility
+      video: true,
       audio: true,
     });
-
     addVideoStream(myVideo, stream);
 
-    // When connected to PeerJS server
     myPeer.on("open", (id) => {
       socket.emit("join-room", ROOM_ID, id);
     });
 
-    // Handle incoming call
     myPeer.on("call", (call) => handleIncomingCall(call, stream));
-
-    // When a new user joins
-    socket.on("user-connected", (userId) => {
-      if (!peers[userId]) connectToPeer(userId, stream);
-    });
-
-    // When a user disconnects
-    socket.on("user-disconnected", (userId) => {
-      disconnectPeer(userId);
-    });
-
-    // Reconnect handling
-    socket.io.on("reconnect", () => {
-      if (myPeer.id) {
-        socket.emit("join-room", ROOM_ID, myPeer.id);
-      }
-    });
+    socket.on("user-connected", (userId) => connectToPeer(userId, stream));
+    socket.on("user-disconnected", (userId) => disconnectPeer(userId));
   } catch (error) {
-    console.error("Failed to get media stream:", error);
-    alert("Camera and microphone access are required.");
+    console.error("Media access error:", error);
   }
 })();
 
-// ========== Call Handling ==========
-
 function handleIncomingCall(call, stream) {
-  if (peers[call.peer]) return;
-
+  if (peers[call.peer]) return; // already connected
   call.answer(stream);
-  const video = createVideoElement();
 
-  setupRemoteStreamHandlers(call, video);
+  const video = createVideoElement();
+  call.on("stream", (remoteStream) => addVideoStream(video, remoteStream));
+  call.on("close", () => video.remove());
+
   peers[call.peer] = call;
 }
 
@@ -62,7 +43,9 @@ function connectToPeer(userId, stream) {
   const call = myPeer.call(userId, stream);
   const video = createVideoElement();
 
-  setupRemoteStreamHandlers(call, video);
+  call.on("stream", (remoteStream) => addVideoStream(video, remoteStream));
+  call.on("close", () => video.remove());
+
   peers[userId] = call;
 }
 
@@ -73,49 +56,19 @@ function disconnectPeer(userId) {
   }
 }
 
-// ========== Helpers ==========
-
 function createVideoElement(muted = false) {
   const video = document.createElement("video");
   video.playsInline = true;
-  video.autoplay = true;
   video.muted = muted;
   return video;
 }
 
 function addVideoStream(video, stream) {
-  if (video.srcObject) return;
-
   video.srcObject = stream;
   video.addEventListener("loadedmetadata", () => {
     video.play().catch((err) => {
-      console.warn("Autoplay issue:", err);
+      console.error("Auto-play failed:", err);
     });
   });
-  videoGrid.appendChild(video);
-}
-
-function setupRemoteStreamHandlers(call, video) {
-  // Newer browsers
-  call.on("track", (_, remoteStream) => {
-    if (!video.srcObject) {
-      addVideoStream(video, remoteStream);
-    }
-  });
-
-  // Fallback for older browsers
-  call.on("stream", (remoteStream) => {
-    if (!video.srcObject) {
-      addVideoStream(video, remoteStream);
-    }
-  });
-
-  call.on("close", () => {
-    video.remove();
-  });
-
-  call.on("error", (err) => {
-    console.error("Call error:", err);
-    video.remove();
-  });
+  videoGrid.append(video);
 }
