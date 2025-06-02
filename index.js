@@ -1,17 +1,8 @@
 const express = require("express");
 const app = express();
 const https = require("https");
-const server = https.createServer(options, app);
-const io = require("socket.io")(server, {
-  cors: {
-    origin: "*", // or limit to your domain
-    methods: ["GET", "POST"],
-  },
-});
-const socket = io("https://webcall-7f8y.onrender.com", {
-  transports: ["websocket"],
-});
-  
+const server = https.createServer(app);
+const io = require("socket.io")(server);
 const { v4: uuidV4 } = require("uuid");
 
 app.set("view engine", "ejs");
@@ -26,15 +17,15 @@ app.get("/:room", (req, res) => {
 });
 
 io.on("connection", (socket) => {
-  socket.on("join-room", (roomId, userId) => {
-    socket.join(roomId);
-    socket.to(roomId).emit("user-connected", userId);
+    socket.on("join-room", (roomId, userId) => {
+      socket.join(roomId);
+      socket.to(roomId).emit("user-connected", userId);
 
-    socket.on("disconnect", () => {
-      socket.to(roomId).emit("user-disconnected", userId);
+      socket.on("disconnect", () => {
+        socket.to(roomId).emit("user-disconnected", userId);
+      });
     });
-  });
+      
 });
 
-server.listen(443); // For HTTPS
-
+server.listen(443);
