@@ -24,7 +24,7 @@ navigator.mediaDevices
   .then((stream) => {
     addVideoStream(myVideo, stream);
 
-    myPeer.on("open", (id) => {
+    peer.on("open", (id) => {
       socket.emit("join-room", ROOM_ID, id);
     });
 
