@@ -1,9 +1,11 @@
 const socket = io("/");
-const videoGrid = document.getElementById("video-grid");
 
+const videoGrid = document.getElementById("video-grid");
 const myPeer = new Peer(undefined, {
+    
   secure: true,
-}); // Uses PeerJS default cloud server
+}); // uses default PeerJS server
+
 const myVideo = document.createElement("video");
 myVideo.muted = true;
 myVideo.playsInline = true;
@@ -18,7 +20,6 @@ navigator.mediaDevices
   .then((stream) => {
     addVideoStream(myVideo, stream);
 
-    // Emit after stream is ready
     myPeer.on("open", (id) => {
       socket.emit("join-room", ROOM_ID, id);
     });
@@ -28,24 +29,32 @@ navigator.mediaDevices
       call.answer(stream);
       const video = document.createElement("video");
       video.playsInline = true;
+
       call.on("stream", (userVideoStream) => {
-        console.log("Received stream from peer");
         addVideoStream(video, userVideoStream);
       });
+
+      call.on("close", () => {
+        video.remove();
+      });
+
+      peers[call.peer] = call;
     });
 
-    // When a new user connects
+    // When another user connects
     socket.on("user-connected", (userId) => {
       connectToNewUser(userId, stream);
     });
   })
   .catch((err) => {
-    console.error("Error getting media:", err);
+    console.error("Error accessing media devices:", err);
   });
 
-// Remove disconnected user
 socket.on("user-disconnected", (userId) => {
-  if (peers[userId]) peers[userId].close();
+  if (peers[userId]) {
+    peers[userId].close();
+    delete peers[userId];
+  }
 });
 
 function connectToNewUser(userId, stream) {
@@ -54,7 +63,6 @@ function connectToNewUser(userId, stream) {
   video.playsInline = true;
 
   call.on("stream", (userVideoStream) => {
-    console.log("Connected to new user, receiving stream");
     addVideoStream(video, userVideoStream);
   });
 
@@ -67,7 +75,6 @@ function connectToNewUser(userId, stream) {
 
 function addVideoStream(video, stream) {
   video.srcObject = stream;
-  video.playsInline = true;
   video.addEventListener("loadedmetadata", () => {
     video.play().catch((err) => {
       console.error("Video play failed:", err);
