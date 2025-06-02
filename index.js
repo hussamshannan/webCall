@@ -9,8 +9,6 @@ app.use(express.static("public"));
 
 app.get("/", (req, res) => {
   res.redirect(`/${uuidV4()}`);
-//   res.redirect(`https://gocall.netlify.app/${uuidV4()}`);
-//   res.redirect(`http://localhost:5173//${uuidV4()}`);
 });
 
 app.get("/:room", (req, res) => {
@@ -18,15 +16,14 @@ app.get("/:room", (req, res) => {
 });
 
 io.on("connection", (socket) => {
-    socket.on("join-room", (roomId, userId) => {
-      socket.join(roomId);
-      socket.to(roomId).emit("user-connected", userId);
+  socket.on("join-room", (roomId, userId) => {
+    socket.join(roomId);
+    socket.to(roomId).emit("user-connected", userId);
 
-      socket.on("disconnect", () => {
-        socket.to(roomId).emit("user-disconnected", userId);
-      });
+    socket.on("disconnect", () => {
+      socket.to(roomId).emit("user-disconnected", userId);
     });
-      
+  });
 });
 
 server.listen(3000);
