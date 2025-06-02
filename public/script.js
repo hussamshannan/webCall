@@ -2,14 +2,10 @@ const socket = io("/");
 const videoGrid = document.getElementById("video-grid");
 
 // Initialize Peer with explicit TURN/STUN configuration
-const myPeer = new Peer(undefined, {
-  secure: true,
+var peer = new Peer({
   config: {
-    iceServers: [
-      { urls: "stun:stun.l.google.com:19302" },
-      // Add your TURN server credentials here if available
-    ],
-  },
+    iceServers: [{ url: "stun:stun.l.google.com:19302" }],
+  } /* Sample servers, please use appropriate ones */,
 });
 
 const myVideo = document.createElement("video");
