@@ -1,21 +1,18 @@
 const socket = io("/");
-const videoGrid = document.getElementById("video-grid");
 
-// Initialize Peer with explicit TURN/STUN configuration
-var peer = new Peer({
-  config: {
-    iceServers: [{ url: "stun:stun.l.google.com:19302" }],
-  } /* Sample servers, please use appropriate ones */,
-});
+const videoGrid = document.getElementById("video-grid");
+const myPeer = new Peer(undefined, {
+  secure: true,
+  port: 443,
+  host: "https://webcall-7f8y.onrender.com/", // Replace with your PeerJS server URL
+}); // uses default PeerJS server
 
 const myVideo = document.createElement("video");
 myVideo.muted = true;
 myVideo.playsInline = true;
-myVideo.setAttribute("autoplay", "true"); // Explicit autoplay attribute
 
 const peers = {};
 
-// Handle media stream errors explicitly
 navigator.mediaDevices
   .getUserMedia({
     video: true,
@@ -24,68 +21,65 @@ navigator.mediaDevices
   .then((stream) => {
     addVideoStream(myVideo, stream);
 
-    peer.on("open", (id) => {
+    myPeer.on("open", (id) => {
       socket.emit("join-room", ROOM_ID, id);
     });
 
-    peer.on("call", (call) => {
+    // Answer incoming call
+    myPeer.on("call", (call) => {
       call.answer(stream);
       const video = document.createElement("video");
       video.playsInline = true;
-      video.setAttribute("autoplay", "true"); // Required for iOS
-      video.muted = true; // Mute remote streams initially
 
       call.on("stream", (userVideoStream) => {
         addVideoStream(video, userVideoStream);
       });
 
-      call.on("close", () => video.remove());
+      call.on("close", () => {
+        video.remove();
+      });
+
       peers[call.peer] = call;
     });
 
+    // When another user connects
     socket.on("user-connected", (userId) => {
       connectToNewUser(userId, stream);
     });
   })
   .catch((err) => {
-    console.error("Media Error:", err);
-    // Implement user-facing error message here
+    console.error("Error accessing media devices:", err);
   });
 
 socket.on("user-disconnected", (userId) => {
-  if (peers[userId]) peers[userId].close();
-  delete peers[userId];
+  if (peers[userId]) {
+    peers[userId].close();
+    delete peers[userId];
+  }
 });
 
 function connectToNewUser(userId, stream) {
   const call = myPeer.call(userId, stream);
   const video = document.createElement("video");
   video.playsInline = true;
-  video.setAttribute("autoplay", "true"); // Required for iOS
-  video.muted = true; // Mute remote streams initially
 
   call.on("stream", (userVideoStream) => {
     addVideoStream(video, userVideoStream);
   });
 
-  call.on("close", () => video.remove());
+  call.on("close", () => {
+    video.remove();
+  });
+
   peers[userId] = call;
 }
 
 function addVideoStream(video, stream) {
   video.srcObject = stream;
-
-  // Use 'canplay' instead of 'loadedmetadata' for iOS
-  video.addEventListener(
-    "canplay",
-    () => {
-      video.play().catch((err) => {
-        console.error("Playback Failed:", err);
-        // Implement fallback like mute/unmute button
-      });
-    },
-    { once: true }
-  );
-
-  videoGrid.appendChild(video);
+  video.addEventListener("loadedmetadata", () => {
+    video.play().catch((err) => {
+      console.error("Video play failed:", err);
+    });
+  });
+  videoGrid.append(video);
 }
