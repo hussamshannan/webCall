@@ -1,8 +1,16 @@
 const express = require("express");
-const app = express();
-const server = require("http").Server(app);
-const io = require("socket.io")(server);
+const http = require("http");
+const { Server } = require("socket.io");
 const { v4: uuidV4 } = require("uuid");
+
+const app = express();
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: "*", // in production, replace * with your frontend domain
+    methods: ["GET", "POST"],
+  },
+});
 
 app.set("view engine", "ejs");
 app.use(express.static("public"));
@@ -19,6 +27,7 @@ io.on("connection", (socket) => {
   socket.on("join-room", (roomId, userId) => {
     socket.join(roomId);
     socket.to(roomId).emit("user-connected", userId);
+    socket.emit("joined-room", roomId);
 
     socket.on("disconnect", () => {
       socket.to(roomId).emit("user-disconnected", userId);
@@ -26,4 +35,6 @@ io.on("connection", (socket) => {
   });
 });
 
-server.listen(3000);
+server.listen(3000, () => {
+  console.log("Server listening on http://localhost:3000");
+});
