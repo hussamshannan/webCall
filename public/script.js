@@ -4,7 +4,6 @@ const peers = {};
 const videoGrid = document.getElementById("video-grid");
 const myVideo = createVideoElement(true);
 
-const a = "";
 myPeer.on("open", async (id) => {
   try {
     const stream = await navigator.mediaDevices.getUserMedia({
