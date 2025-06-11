@@ -24,9 +24,9 @@ app.get("/:room", (req, res) => {
 });
 
 io.on("connection", (socket) => {
-  socket.on("join-room", (roomId, userId) => {
+  socket.on("join-room", (roomId, userId,useVideo) => {
     socket.join(roomId);
-    socket.to(roomId).emit("user-connected", userId);
+    socket.to(roomId).emit("user-connected", userId, useVideo);
     socket.on("disconnect", () => {
       socket.to(roomId).emit("user-disconnected", userId);
     });
